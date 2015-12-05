@@ -1,0 +1,60 @@
+	public function insertar(){
+		$params = (object)Input::All();
+		$params->nombre = ucwords($params->nombre);
+
+		$validator = self::validartabla(Input::All());
+
+		if($validator->fails()){
+			$messages = $validator->messages();
+			return Response::json(array('status' => 'error', 'message' => $messages->first()));
+		}
+		
+
+		$tabla = new tablaes();
+		$tabla->nombre = $params->nombre;
+		$tabla->contacto = $params->contacto;
+		$tabla->informacion = $params->puesto;
+		$tabla->correo = $params->correo;
+		$tabla->CorreosVoucher = $params->CorreosVoucher;
+		$tabla->correoCld = $params->correoCld;
+		$tabla->foto = 'imagenes/tablaes/'.self::guardarImagen($params);
+		$tabla->estado = 'Activo';
+		if($tabla->save()){
+			$response = array('status' => 'success', 'message' => 'Se guardo el nuevo tabla: '.$tabla->nombre);
+		}else{
+			$response = array('status' => 'error', 'message' => 'Ocurrió un error al guardar el nuevo tabla');
+		}
+		return Response::json($response);
+	}
+	
+	private function guardarImagen($params){
+		$dirFile = 'img/carpeta';
+		if(!is_dir($dirFile)){
+			mkdir($dirFile);
+		}
+		$dirFile = '/img/carpeta/';
+		//generar el nombre del archivo
+		$extension = $params->foto->getClientOriginalExtension();
+		$fileName = str_replace(' ', '', $params->nombre).'.'.$extension;
+		$path = public_path().$dirFile.$fileName;
+
+		$img = Image::make($params->foto);
+		$img->resize(116, 44);
+		if($img->save($path)){
+			return $fileName;
+		}
+		return false;
+
+	}
+	
+	public function getForm(){
+		$tabla = array();
+		$params = array(
+			'id' => Input::get('id')
+		);
+		if($params['id']){
+			$tabla = tablaes::consulta($pagination=0,$json=false,$params);
+		}
+
+		return view('formtablaes',['tabla'=>$tabla]);
+	}
